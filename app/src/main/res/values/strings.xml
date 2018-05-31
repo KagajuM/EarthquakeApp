@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">EarthquakeApp 2.0</string>
+    <string name="connection_loss_tv">You are not connected to the internet</string>
+</resources>
