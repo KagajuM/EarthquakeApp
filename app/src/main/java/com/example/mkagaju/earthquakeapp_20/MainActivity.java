@@ -1,24 +1,21 @@
 package com.example.mkagaju.earthquakeapp_20;
 
-import android.annotation.SuppressLint;
-import android.app.LoaderManager;
-import android.content.AsyncTaskLoader;
 import android.content.Context;
 import android.content.Intent;
-import android.content.Loader;
-import android.net.Uri;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.os.PersistableBundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.VisibleForTesting;
+import android.support.test.espresso.IdlingResource;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.View;
+import android.webkit.WebView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import java.io.IOException;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity
@@ -30,11 +27,14 @@ implements ListItemClickListener, EarthquakeTask.UpdateUI{
     private DividerItemDecoration decorator;
     private TextView connectionLossTv;
     private ProgressBar progressBar;
+    private WebView webView;
 
-    private final static String PAST_EARTHQUAKES_URL
-            = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson";
+    private String PAST_EARTHQUAKES_URL
+            = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&minmagnitude=2";
 
     private EarthquakeTask earthquakeTask;
+
+    private SimpleIdlingResource mIdlingResource;
 
 
     @Override
@@ -46,6 +46,7 @@ implements ListItemClickListener, EarthquakeTask.UpdateUI{
         //Setup resources
         connectionLossTv = (TextView) findViewById(R.id.connection_loss_tv);
         progressBar = (ProgressBar) findViewById(R.id.progress_bar);
+
 
         //Setup the recycler view
         recyclerView = (RecyclerView) findViewById(R.id.recyclerView);
@@ -62,20 +63,33 @@ implements ListItemClickListener, EarthquakeTask.UpdateUI{
 
     }
 
+    @Override
+    public void onSaveInstanceState(Bundle outState, PersistableBundle outPersistentState) {
+        super.onSaveInstanceState(outState, outPersistentState);
+
+    }
+
+    public void setPAST_EARTHQUAKES_URL(String url){
+        PAST_EARTHQUAKES_URL = url;
+    }
+
+    @VisibleForTesting
+    @NonNull
+    public IdlingResource getIdlingResource() {
+        if (mIdlingResource == null) {
+            mIdlingResource = new SimpleIdlingResource();
+        }
+        return mIdlingResource;
+    }
+    public RecyclerView getRecyclerView () {
+        return this.recyclerView;
+    }
 
     @Override
     public void onListItemClicked(String urlText) {
-
-        Uri uri = Uri.parse(urlText);
-        Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-
-        //To avoid lags
-        if (intent.resolveActivity(getPackageManager())!=null) {
-            startActivity(intent);
-        }
-        else {
-           Toast.makeText(this, "Missing Link", Toast.LENGTH_SHORT).show();
-        }
+        Intent detailsIntent = new Intent(this, WebViewActivity.class);
+        detailsIntent.putExtra("URL", urlText);
+        this.startActivity(detailsIntent);
     }
 
     @Override
@@ -90,14 +104,10 @@ implements ListItemClickListener, EarthquakeTask.UpdateUI{
 
     @Override
     public void populateAdapter(List<Earthquake> list) {
-        adapter = new Adapter(list, MainActivity.this);
+        adapter = new Adapter(getBaseContext(),list, MainActivity.this);
         recyclerView.setAdapter(adapter);
         recyclerView.setVisibility(View.VISIBLE);
 
     }
 
-    @Override
-    public void onClickListener() {
-
-    }
 }

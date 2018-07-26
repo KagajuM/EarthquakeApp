@@ -1,8 +1,9 @@
 package com.example.mkagaju.earthquakeapp_20;
 
-import android.location.Location;
+
+import java.text.DecimalFormat;
 import android.net.Uri;
-import android.support.v7.widget.LinearSnapHelper;
+
 import android.util.JsonReader;
 import android.util.JsonToken;
 import android.util.Log;
@@ -13,10 +14,11 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Properties;
+
 
 public class Networking {
     //Tags of Relevant Information
@@ -51,7 +53,12 @@ public class Networking {
         JsonReader jsonReader = new JsonReader(new InputStreamReader(in, charsetName));
 
         try{
-            return readEarthquakeList(jsonReader);
+//            long startTime = System.nanoTime();
+            List<Earthquake> list = readEarthquakeList(jsonReader);
+//            long endTime = System.nanoTime();
+//            long totalTime = (endTime - startTime)/1000000;
+//            Log.e("Json Parsing Runtime", String.valueOf(totalTime)+"ms");
+            return list;
         } finally{
             jsonReader.close();
         }
@@ -102,12 +109,15 @@ public class Networking {
         while (reader.hasNext()){
             String name = reader.nextName();
             if (name.equals(MAGNITUDE) && reader.peek() != JsonToken.NULL) {
-                mag = String.valueOf(reader.nextDouble());
+                DecimalFormat df = new DecimalFormat("0.0");
+                mag = df.format(reader.nextDouble());
             } else if (name.equals(LOCATION)) {
                 location = reader.nextString();
             } else if (name.equals(EXACT_TIME)) {
                 exact_time = reader.nextLong();
-                date = new Date(exact_time).toString();
+                Date dateObject = new Date(exact_time);
+                SimpleDateFormat simpleDate = new SimpleDateFormat("EEE, MMM dd");
+                date = simpleDate.format(dateObject);
             } else if (name.equals(DETAILS)) {
                 detailsUrl = reader.nextString();
             } else {
@@ -116,8 +126,7 @@ public class Networking {
         }
         reader.endObject();
         Earthquake retVal = new Earthquake(location, date, mag, detailsUrl);
-        //TODO: Log the earthquake object
-        Log.e(TAG, retVal.toString());
+
         return retVal;
     }
 
